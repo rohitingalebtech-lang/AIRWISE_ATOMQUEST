@@ -1,0 +1,9 @@
+# AirWise — Dependencies for AtomQUEST 2026 Round 2 Project
+# Python >= 3.12 recommended
+
+Flask>=3.0.0
+gunicorn>=21.2.0
+scikit-learn>=1.4.0
+scipy>=1.10.0
+numpy>=1.26.0
+pandas>=2.2.0
