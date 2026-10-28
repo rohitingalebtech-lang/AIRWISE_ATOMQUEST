@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ project_name }} — Personalised Fan Comfort Learning{% endblock %}</title>
+    <!-- Google Fonts for crisp engineering typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Top System Notice Banner (Feature 8) -->
+    <div class="simulation-banner" role="alert" id="system-simulation-banner">
+        <div class="banner-inner">
+            <span class="pulse-indicator"></span>
+            <strong>SIMULATION PROTOTYPE:</strong> This application is a software-only machine learning demonstration. 
+            Fan speeds are recommendations only — no physical fan or live sensors are connected.
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="site-header">
+        <div class="header-container">
+            <a href="{{ url_for('index') }}" class="brand-group" id="nav-brand-link">
+                <div class="brand-icon">
+                    <svg class="fan-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 2C13.5 5 15.5 8 12 9C8.5 10 10.5 7 12 2Z"></path>
+                        <path d="M22 12C19 13.5 16 15.5 15 12C14 8.5 17 10.5 22 12Z"></path>
+                        <path d="M12 22C10.5 19 8.5 16 12 15C15.5 14 13.5 17 12 22Z"></path>
+                        <path d="M2 12C5 10.5 8 8.5 9 12C10 15.5 7 13.5 2 12Z"></path>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <div class="brand-title">{{ project_name }} <span class="badge-tag">Track 1: Fan</span></div>
+                    <div class="brand-subtitle">{{ project_tagline }}</div>
+                </div>
+            </a>
+
+            <nav class="site-nav" aria-label="Main Navigation">
+                <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" id="nav-dashboard">
+                    <span class="nav-icon">📊</span> Dashboard
+                </a>
+                <a href="{{ url_for('compare') }}" class="nav-link {% if request.endpoint == 'compare' %}active{% endif %}" id="nav-compare">
+                    <span class="nav-icon">⚖️</span> ML vs Rules
+                </a>
+                <a href="{{ url_for('history') }}" class="nav-link {% if request.endpoint == 'history' %}active{% endif %}" id="nav-history">
+                    <span class="nav-icon">📜</span> History
+                </a>
+                <a href="{{ url_for('evaluation') }}" class="nav-link {% if request.endpoint == 'evaluation' %}active{% endif %}" id="nav-evaluation">
+                    <span class="nav-icon">🎯</span> Model Evaluation
+                </a>
+                <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}active{% endif %}" id="nav-about">
+                    <span class="nav-icon">🛡️</span> Safety & Team
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Flash Messages -->
+    <div class="alerts-container" id="alerts-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        <span class="alert-icon">
+                            {% if category == 'success' %}✅{% elif category == 'error' %}⚠️{% else %}ℹ️{% endif %}
+                        </span>
+                        <span class="alert-text">{{ message }}</span>
+                        <button type="button" class="alert-close" onclick="this.parentElement.remove()" aria-label="Close">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content Block -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Professional Footer -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-brand">{{ project_name }}</div>
+                    <p class="footer-desc">
+                        AtomQUEST 2026 Round 2 Competition Prototype — Fan Track.
+                        An adaptive machine learning solution balancing psychrometric comfort and user feedback.
+                    </p>
+                    <div class="institution-badge">
+                        🏢 {{ college_name }}
+                    </div>
+                </div>
+
+                <div class="footer-col">
+                    <div class="footer-heading">Student Team</div>
+                    <ul class="team-list">
+                        {% for member in team_members %}
+                            <li>👤 {{ member }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <div class="footer-heading">Prototype Characteristics</div>
+                    <ul class="footer-links">
+                        <li>Decision Tree Classifier (scikit-learn)</li>
+                        <li>Instance-Based Feedback Personalisation</li>
+                        <li>Deterministic Rule Baseline Comparison</li>
+                        <li>Persistent SQLite Transaction Store</li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <div class="footer-heading">Important Notice</div>
+                    <p class="disclaimer-text">
+                        This prototype is intended exclusively for academic competition evaluation.
+                        No physical fan control relays or live IoT sensors are deployed in this round.
+                    </p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div>&copy; 2026 Team AirWise — Nutan Maharashtra Institute of Engineering and Technology (NMIET), Pune.</div>
+                <div>AtomQUEST 2026 Round 2 | Track 1 (Fan)</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Global JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

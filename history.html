@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}History — {{ project_name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-intro">
+        <div class="intro-content">
+            <h1 class="page-title">Persistent Recommendation & Feedback History</h1>
+            <p class="page-subtitle">
+                Logged historical sessions stored persistently in SQLite. 
+                These records power the <strong>Contextual Personalisation Engine</strong> for continuous user alignment.
+            </p>
+        </div>
+        <div class="intro-actions">
+            <form action="{{ url_for('clear_all_history') }}" method="POST" onsubmit="return confirm('Are you sure you want to clear all history records? This cannot be undone.');">
+                <button type="submit" class="btn btn-danger-outline" id="btn-clear-history">
+                    🗑️ Clear History
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar card">
+        <div class="filter-group">
+            <span class="filter-label">Filter Records:</span>
+            <a href="{{ url_for('history', filter='all') }}" 
+               class="btn-filter {% if filter_type == 'all' or not filter_type %}active{% endif %}">
+                All Records ({{ total_count }})
+            </a>
+            <a href="{{ url_for('history', filter='feedback_only') }}" 
+               class="btn-filter {% if filter_type == 'feedback_only' %}active{% endif %}">
+                With User Feedback Only
+            </a>
+            <a href="{{ url_for('history', filter='no_feedback') }}" 
+               class="btn-filter {% if filter_type == 'no_feedback' %}active{% endif %}">
+                Pending Feedback
+            </a>
+        </div>
+        <div class="filter-info text-muted">
+            SQLite Database: <code>airwise.db</code>
+        </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="card panel-card">
+        {% if records and records|length > 0 %}
+            <div class="table-responsive">
+                <table class="data-table" id="history-table">
+                    <thead>
+                        <tr>
+                            <th># ID</th>
+                            <th>Timestamp</th>
+                            <th>Temperature</th>
+                            <th>Humidity</th>
+                            <th>Time of Day</th>
+                            <th>ML Base</th>
+                            <th>Personalised</th>
+                            <th>Preferred</th>
+                            <th>Feedback Feeling</th>
+                            <th>Offset</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in records %}
+                            <tr>
+                                <td><span class="badge-tag">#{{ row.id }}</span></td>
+                                <td class="font-mono text-muted">{{ row.timestamp }}</td>
+                                <td><strong>{{ row.temperature }}°C</strong></td>
+                                <td>{{ row.humidity }}%</td>
+                                <td>
+                                    <span class="chip-sm">
+                                        {% if row.time_of_day == 'Morning' %}🌅 Morning
+                                        {% elif row.time_of_day == 'Afternoon' %}☀️ Afternoon
+                                        {% elif row.time_of_day == 'Evening' %}🌇 Evening
+                                        {% else %}🌙 Night{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-speed-sm badge-speed-{{ row.ml_speed }}">
+                                        Lvl {{ row.ml_speed }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-speed-sm badge-speed-{{ row.personalized_speed }}">
+                                        Lvl {{ row.personalized_speed }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if row.preferred_speed %}
+                                        <strong class="text-cyan">Level {{ row.preferred_speed }}</strong>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.feedback_type == 'too_slow' %}
+                                        <span class="badge-feedback fb-slow">🐢 Too Slow</span>
+                                    {% elif row.feedback_type == 'comfortable' %}
+                                        <span class="badge-feedback fb-comfort">👌 Comfortable</span>
+                                    {% elif row.feedback_type == 'too_fast' %}
+                                        <span class="badge-feedback fb-fast">⚡ Too Fast</span>
+                                    {% else %}
+                                        <span class="text-muted">No Feedback</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.adjustment_applied > 0 %}
+                                        <span class="text-green">+{{ row.adjustment_applied }} Level</span>
+                                    {% elif row.adjustment_applied < 0 %}
+                                        <span class="text-red">{{ row.adjustment_applied }} Level</span>
+                                    {% else %}
+                                        <span class="text-muted">0</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <!-- Clear Empty State (Feature 6 requirement) -->
+            <div class="empty-state" id="history-empty-state">
+                <div class="empty-icon">📭</div>
+                <h3 class="empty-title">No History Records Found</h3>
+                <p class="empty-desc">
+                    {% if filter_type == 'feedback_only' %}
+                        You haven't submitted any feedback yet. Go to the dashboard, calculate a recommendation, and click "Save Feedback"!
+                    {% else %}
+                        No recommendations have been logged yet. Start by setting your ambient conditions on the dashboard.
+                    {% endif %}
+                </p>
+                <div class="empty-action">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary" id="btn-empty-dashboard">
+                        ⚡ Go to Dashboard
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

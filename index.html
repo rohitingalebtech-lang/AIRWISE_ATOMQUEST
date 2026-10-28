@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — {{ project_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <!-- Dashboard Header & Objective -->
+    <div class="page-intro">
+        <div class="intro-content">
+            <h1 class="page-title">Personalised Fan Comfort Engineering Dashboard</h1>
+            <p class="page-subtitle">
+                AirWise dynamically computes optimal fan-speed levels (1 to 5) from room temperature, relative humidity, 
+                and time of day using a <strong>scikit-learn DecisionTreeClassifier</strong>, fine-tuned by your 
+                <strong>saved comfort feedback</strong>.
+            </p>
+        </div>
+        <div class="intro-actions">
+            <span class="badge badge-cyan" id="live-status-badge">
+                <span class="status-dot"></span> System Live & Simulating
+            </span>
+        </div>
+    </div>
+
+    <!-- Top Metric Cards (Feature 1) -->
+    <div class="kpi-grid">
+        <div class="kpi-card" id="kpi-conditions">
+            <div class="kpi-header">
+                <span class="kpi-label">Current Ambient Inputs</span>
+                <span class="kpi-icon">🌡️</span>
+            </div>
+            <div class="kpi-value" id="kpi-temp-val">{{ initial_state.inputs.temperature }}°C</div>
+            <div class="kpi-meta">
+                <span id="kpi-hum-val">{{ initial_state.inputs.humidity }}% Humidity</span> &bull; 
+                <span id="kpi-time-val">{{ initial_state.inputs.time_of_day }}</span>
+            </div>
+        </div>
+
+        <div class="kpi-card highlight-card" id="kpi-speed">
+            <div class="kpi-header">
+                <span class="kpi-label">Active Fan Recommendation</span>
+                <span class="kpi-icon">💨</span>
+            </div>
+            <div class="kpi-value text-cyan" id="kpi-speed-val">
+                Level {{ initial_state.active_speed }}
+            </div>
+            <div class="kpi-meta" id="kpi-speed-name">
+                {{ initial_state.active_speed_info.name }}
+            </div>
+        </div>
+
+        <div class="kpi-card" id="kpi-feedback">
+            <div class="kpi-header">
+                <span class="kpi-label">Saved Feedback Records</span>
+                <span class="kpi-icon">🧠</span>
+            </div>
+            <div class="kpi-value" id="kpi-feedback-count">{{ feedback_count }}</div>
+            <div class="kpi-meta">Used by Personalisation Engine</div>
+        </div>
+
+        <div class="kpi-card" id="kpi-model">
+            <div class="kpi-header">
+                <span class="kpi-label">ML Model Status</span>
+                <span class="kpi-icon">🌲</span>
+            </div>
+            <div class="kpi-value text-green">Decision Tree</div>
+            <div class="kpi-meta">scikit-learn &bull; Fixed Seed (42)</div>
+        </div>
+    </div>
+
+    <!-- Two-Column Control Panel (Feature 1 & Feature 2) -->
+    <div class="control-grid">
+        <!-- Left: Comfort Inputs Form -->
+        <section class="card panel-card" aria-labelledby="form-heading">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title" id="form-heading">1. Comfort Input Controls</h2>
+                    <p class="card-subtitle">Set indoor ambient conditions to compute recommended fan airflow.</p>
+                </div>
+                <span class="chip chip-outline">Valid Range: {{ temp_min }}°C – {{ temp_max }}°C</span>
+            </div>
+
+            <form id="prediction-form" action="{{ url_for('predict') }}" method="POST" novalidate>
+                <!-- Quick Demo Presets for Judges / Testers -->
+                <div class="form-group">
+                    <label class="form-label text-muted">Quick Scenario Presets (For Demonstration):</label>
+                    <div class="preset-buttons">
+                        <button type="button" class="btn-preset" data-temp="18.0" data-hum="40.0" data-time="Morning">
+                            ❄️ Cool Morning (18°C, 40%)
+                        </button>
+                        <button type="button" class="btn-preset" data-temp="26.0" data-hum="55.0" data-time="Afternoon">
+                            🌤️ Moderate Afternoon (26°C, 55%)
+                        </button>
+                        <button type="button" class="btn-preset" data-temp="33.0" data-hum="80.0" data-time="Afternoon">
+                            🔥 Humid Heat (33°C, 80%)
+                        </button>
+                        <button type="button" class="btn-preset" data-temp="22.0" data-hum="50.0" data-time="Night">
+                            🌙 Mild Night (22°C, 50%)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Temperature Input -->
+                <div class="form-group">
+                    <div class="form-label-row">
+                        <label for="temperature-input" class="form-label">
+                            Room Temperature (°C)
+                        </label>
+                        <span class="range-value-badge" id="temp-display">{{ initial_state.inputs.temperature }} °C</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="temperature-slider" 
+                               min="{{ temp_min }}" max="{{ temp_max }}" step="0.5" 
+                               value="{{ initial_state.inputs.temperature }}" class="range-slider">
+                        <input type="number" id="temperature-input" name="temperature" 
+                               min="{{ temp_min }}" max="{{ temp_max }}" step="0.1" 
+                               value="{{ initial_state.inputs.temperature }}" class="form-control number-input" required>
+                    </div>
+                    <div class="form-help">Allowable limits: {{ temp_min }}°C to {{ temp_max }}°C (typical living space).</div>
+                    <div class="invalid-feedback" id="temp-error"></div>
+                </div>
+
+                <!-- Humidity Input -->
+                <div class="form-group">
+                    <div class="form-label-row">
+                        <label for="humidity-input" class="form-label">
+                            Relative Humidity (%)
+                        </label>
+                        <span class="range-value-badge" id="hum-display">{{ initial_state.inputs.humidity }} %</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="humidity-slider" 
+                               min="{{ hum_min }}" max="{{ hum_max }}" step="1" 
+                               value="{{ initial_state.inputs.humidity }}" class="range-slider">
+                        <input type="number" id="humidity-input" name="humidity" 
+                               min="{{ hum_min }}" max="{{ hum_max }}" step="0.5" 
+                               value="{{ initial_state.inputs.humidity }}" class="form-control number-input" required>
+                    </div>
+                    <div class="form-help">Allowable limits: {{ hum_min }}% to {{ hum_max }}% relative humidity.</div>
+                    <div class="invalid-feedback" id="hum-error"></div>
+                </div>
+
+                <!-- Time of Day Selector -->
+                <div class="form-group">
+                    <label class="form-label">Time of Day</label>
+                    <div class="pill-group" role="radiogroup" aria-label="Time of Day Selection">
+                        {% for cat in time_categories %}
+                            <label class="pill-radio {% if initial_state.inputs.time_of_day == cat %}active{% endif %}">
+                                <input type="radio" name="time_of_day" value="{{ cat }}" 
+                                       {% if initial_state.inputs.time_of_day == cat %}checked{% endif %}>
+                                <span class="pill-text">
+                                    {% if cat == 'Morning' %}🌅 Morning (06:00 - 12:00)
+                                    {% elif cat == 'Afternoon' %}☀️ Afternoon (12:00 - 17:00)
+                                    {% elif cat == 'Evening' %}🌇 Evening (17:00 - 22:00)
+                                    {% else %}🌙 Night (22:00 - 06:00){% endif %}
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    <div class="invalid-feedback" id="time-error"></div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="btn-predict">
+                        <span class="btn-spinner" id="btn-spinner" style="display: none;"></span>
+                        <span class="btn-text" id="btn-predict-text">⚡ Compute Comfort Recommendation</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Right: Active Recommendation & Personalisation Visualizer -->
+        <section class="card panel-card" aria-labelledby="recommendation-heading">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title" id="recommendation-heading">2. Recommendation & Airflow</h2>
+                    <p class="card-subtitle">Real-time inference with contextual comfort adjustment.</p>
+                </div>
+                <span class="badge badge-speed" id="speed-pill">Level {{ initial_state.active_speed }}</span>
+            </div>
+
+            <!-- Simulated Fan Blade Visualizer -->
+            <div class="fan-visualizer-container">
+                <div class="fan-housing">
+                    <div class="fan-blades fan-speed-{{ initial_state.active_speed }}" id="animated-fan-blades">
+                        <div class="blade blade-1"></div>
+                        <div class="blade blade-2"></div>
+                        <div class="blade blade-3"></div>
+                        <div class="fan-center-cap">
+                            <span id="fan-center-level">{{ initial_state.active_speed }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fan-telemetry">
+                    <div class="telemetry-item">
+                        <span class="tel-label">Recommendation</span>
+                        <strong class="tel-val text-cyan" id="speed-title">{{ initial_state.active_speed_info.name }}</strong>
+                    </div>
+                    <div class="telemetry-item">
+                        <span class="tel-label">Simulated Airflow Speed</span>
+                        <span class="tel-val" id="speed-rpm">{{ initial_state.active_speed_info.rpm_range }}</span>
+                    </div>
+                    <div class="telemetry-item">
+                        <span class="tel-label">Decision Mechanism</span>
+                        <span class="tel-val" id="active-mechanism">
+                            {% if initial_state.personalization.has_personalization %}
+                                Personalised (ML + Feedback Offset)
+                            {% else %}
+                                Baseline Decision Tree ML
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personalisation Offset Notice (Feature 5) -->
+            <div class="personalization-box {% if initial_state.personalization.has_personalization %}active-offset{% endif %}" id="pers-box">
+                <div class="pers-header">
+                    <span class="pers-icon">{% if initial_state.personalization.has_personalization %}✨{% else %}ℹ️{% endif %}</span>
+                    <strong class="pers-title" id="pers-title">Personalisation Memory Status</strong>
+                </div>
+                <p class="pers-desc" id="pers-desc">
+                    {{ initial_state.personalization.explanation }}
+                </p>
+                <div class="pers-meta text-muted" id="pers-meta">
+                    Decision Tree Base: Level {{ initial_state.ml.speed }} | 
+                    Offset Applied: {% if initial_state.personalization.adjustment > 0 %}+{% endif %}{{ initial_state.personalization.adjustment }} Level(s)
+                </div>
+            </div>
+
+            <!-- Physical Comfort Explanation (Feature 2) -->
+            <div class="explanation-box" id="explanation-box">
+                <div class="box-label">Physical Comfort Rationale:</div>
+                <p class="box-text" id="explanation-text">
+                    {{ initial_state.ml.explanation }}
+                </p>
+            </div>
+
+            <!-- Feedback Submission Widget (Feature 5) -->
+            <div class="feedback-widget" id="feedback-widget">
+                <h3 class="feedback-heading">3. Save Your Comfort Feedback</h3>
+                <p class="feedback-subtext">
+                    Does this recommended fan speed feel comfortable? Your feedback is saved in SQLite and immediately adjusts future recommendations for similar conditions.
+                </p>
+
+                <!-- Hidden record ID container -->
+                <input type="hidden" id="feedback-record-id" value="{{ initial_state.record_id or '' }}">
+
+                <!-- Category Choices -->
+                <div class="feedback-types" role="group" aria-label="Feedback Feeling Selection">
+                    <button type="button" class="btn-feedback" data-type="too_slow" id="fb-too-slow">
+                        <span class="fb-icon">🐢</span>
+                        <span class="fb-label">Too Slow</span>
+                        <span class="fb-hint">Feel warm / need more breeze</span>
+                    </button>
+                    <button type="button" class="btn-feedback active" data-type="comfortable" id="fb-comfortable">
+                        <span class="fb-icon">👌</span>
+                        <span class="fb-label">Comfortable</span>
+                        <span class="fb-hint">Airflow feels just right</span>
+                    </button>
+                    <button type="button" class="btn-feedback" data-type="too_fast" id="fb-too-fast">
+                        <span class="fb-icon">⚡</span>
+                        <span class="fb-label">Too Fast</span>
+                        <span class="fb-hint">Feel chilly / too breezy</span>
+                    </button>
+                </div>
+
+                <!-- Preferred Speed Selector -->
+                <div class="preferred-speed-row">
+                    <label class="form-label">Select Your Preferred Speed (1 to 5):</label>
+                    <div class="speed-selector" id="preferred-speed-selector">
+                        {% for lvl in range(1, 6) %}
+                            <label class="speed-choice {% if lvl == initial_state.active_speed %}selected{% endif %}">
+                                <input type="radio" name="preferred_speed" value="{{ lvl }}" 
+                                       {% if lvl == initial_state.active_speed %}checked{% endif %}>
+                                <span>{{ lvl }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="feedback-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-submit-feedback">
+                        💾 Save Feedback to Memory
+                    </button>
+                    <span class="feedback-status-msg" id="feedback-status-msg"></span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Quick Comparative Banner (Feature 4 Preview) -->
+    <div class="comparison-strip card">
+        <div class="comp-strip-content">
+            <div class="comp-strip-icon">⚖️</div>
+            <div>
+                <h4 class="comp-strip-title">Compare Machine Learning vs Rule-Based Baseline</h4>
+                <p class="comp-strip-text">
+                    For the current conditions ({{ initial_state.inputs.temperature }}°C, {{ initial_state.inputs.humidity }}%), 
+                    the <strong>Decision Tree recommends Level {{ initial_state.ml.speed }}</strong> while the 
+                    <strong>Rule-Based Baseline recommends Level {{ initial_state.rule.speed }}</strong>.
+                </p>
+            </div>
+        </div>
+        <a href="{{ url_for('compare') }}" class="btn btn-outline" id="btn-view-compare">
+            View In-Depth Comparison &rarr;
+        </a>
+    </div>
+</div>
+{% endblock %}
