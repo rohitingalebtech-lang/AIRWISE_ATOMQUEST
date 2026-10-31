@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Safety, Team & Prototype Architecture — {{ project_name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-intro">
+        <div class="intro-content">
+            <h1 class="page-title">Safety, Limitations & Project Roster</h1>
+            <p class="page-subtitle">
+                Comprehensive system specifications, collegiate team details, and essential hardware safety disclaimers 
+                for <strong>AtomQUEST 2026 Round 2</strong>.
+            </p>
+        </div>
+        <div class="intro-badge">
+            <span class="badge badge-danger">Safety Notice Enforced</span>
+        </div>
+    </div>
+
+    <!-- Prominent Safety & Hardware Limitations Banner (Feature 8) -->
+    <div class="card panel-card card-warning-border mb-4" id="safety-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title text-warning">🛡️ Safety & Physical Limitations Notice (Feature 8)</h2>
+                <p class="card-subtitle">Mandatory operational context for judges and evaluation committee.</p>
+            </div>
+            <span class="chip chip-warning">Software Prototype Only</span>
+        </div>
+
+        <div class="safety-points-grid">
+            <div class="safety-box">
+                <div class="safety-box-title">❌ No Physical Fan Connection</div>
+                <p>
+                    AirWise is strictly a software-only simulation for Round 2. 
+                    Calculated fan speeds (Levels 1 to 5) are <strong>algorithmic recommendations</strong>, 
+                    not electronic PWM signals or electrical motor commands. No physical fan is energized.
+                </p>
+            </div>
+
+            <div class="safety-box">
+                <div class="safety-box-title">❌ No Live Hardware Sensors</div>
+                <p>
+                    All environmental inputs (temperature, humidity, time of day) are simulated via software controls. 
+                    No physical DHT11, DHT22, BME280, or thermistor sensors are connected or polled in this prototype.
+                </p>
+            </div>
+
+            <div class="safety-box">
+                <div class="safety-box-title">❌ Hardware Fail-Safe Not Validated</div>
+                <p>
+                    Electrical isolation, thermal runaway cutoffs, stall current detection, and optical relay decoupling 
+                    have not yet been implemented or tested on physical motor hardware. Dangerous direct actuator connections 
+                    have been purposefully excluded.
+                </p>
+            </div>
+
+            <div class="safety-box">
+                <div class="safety-box-title">✔️ Safe Academic Demonstration</div>
+                <p>
+                    The prototype proves software logic: machine learning inference, statistical model evaluation, 
+                    persistent feedback logging, and instance-based personalization without physical electrical risk.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Team Profile -->
+    <div class="card panel-card mb-4">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">👥 Team Roster — AtomQUEST 2026 Round 2</h2>
+                <p class="card-subtitle">Track 1: Fan Competition Submission.</p>
+            </div>
+            <span class="chip chip-cyan">Track 1: Fan</span>
+        </div>
+
+        <div class="team-grid">
+            <div class="member-card">
+                <div class="member-avatar">👨‍💻</div>
+                <div class="member-name">Rohit Ingale</div>
+                <div class="member-role">Team Lead & ML / Full-Stack Developer</div>
+                <div class="member-meta">Second-Year AI & Data Science</div>
+            </div>
+
+            <div class="member-card">
+                <div class="member-avatar">👨‍💻</div>
+                <div class="member-name">Sarthak Avhad</div>
+                <div class="member-role">Systems Architecture & ML Engineer</div>
+                <div class="member-meta">Second-Year AI & Data Science</div>
+            </div>
+
+            <div class="member-card">
+                <div class="member-avatar">👩‍💻</div>
+                <div class="member-name">Gargi Rane</div>
+                <div class="member-role">UI/UX Design & Frontend Integration</div>
+                <div class="member-meta">Second-Year AI & Data Science</div>
+            </div>
+
+            <div class="member-card">
+                <div class="member-avatar">👨‍💻</div>
+                <div class="member-name">Hitesh Yuvare</div>
+                <div class="member-role">Software Testing & Data Validation</div>
+                <div class="member-meta">Second-Year AI & Data Science</div>
+            </div>
+        </div>
+
+        <div class="institution-box mt-4">
+            <div class="institution-icon">🏛️</div>
+            <div>
+                <div class="institution-title">Nutan Maharashtra Institute of Engineering and Technology (NMIET)</div>
+                <div class="institution-subtitle">Pune, Maharashtra, India</div>
+                <p class="institution-desc text-muted">
+                    Department of Artificial Intelligence and Data Science &bull; Under Savitribai Phule Pune University (SPPU).
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Round 3 Hardware Roadmap -->
+    <div class="card panel-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">🚀 Physical Implementation Roadmap (Round 3)</h2>
+                <p class="card-subtitle">Planned hardware integration pathway for advancing beyond software prototype.</p>
+            </div>
+            <span class="chip chip-outline">Future Scope</span>
+        </div>
+
+        <div class="roadmap-steps">
+            <div class="roadmap-step">
+                <div class="step-num">01</div>
+                <div class="step-content">
+                    <h4>Microcontroller & Sensor Interface</h4>
+                    <p>Integrate an ESP32 microcontroller with a calibrated I2C SHT31 sensor for ±0.2°C ambient temperature and ±2% RH readings.</p>
+                </div>
+            </div>
+
+            <div class="roadmap-step">
+                <div class="step-num">02</div>
+                <div class="step-content">
+                    <h4>BLDC Motor & Opto-Isolated PWM Driver</h4>
+                    <p>Deploy a 4-wire BLDC ceiling/table fan motor with tachometer feedback and optocoupler isolation for electrical safety.</p>
+                </div>
+            </div>
+
+            <div class="roadmap-step">
+                <div class="step-num">03</div>
+                <div class="step-content">
+                    <h4>Hardware Watchdog & Thermal Fail-Safe</h4>
+                    <p>Implement an independent thermal bi-metal fuse and hardware watchdog timer to guarantee automatic fan shutoff if communications freeze.</p>
+                </div>
+            </div>
+
+            <div class="roadmap-step">
+                <div class="step-num">04</div>
+                <div class="step-content">
+                    <h4>Edge TinyML Deployment</h4>
+                    <p>Quantize the Decision Tree into C code / TensorFlow Lite for Microcontrollers to run inference natively on the ESP32 without requiring a PC.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

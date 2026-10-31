@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Model Evaluation — {{ project_name }}{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-intro">
+        <div class="intro-content">
+            <h1 class="page-title">Model Evaluation & Synthetic Data Transparency</h1>
+            <p class="page-subtitle">
+                Objective evaluation of the scikit-learn DecisionTreeClassifier and the rule-based baseline 
+                on held-out test data. <strong>All displayed metrics are computed dynamically from actual test predictions.</strong>
+            </p>
+        </div>
+        <div class="intro-badge">
+            <span class="badge badge-warning">Synthetic Dataset (Seed: 42)</span>
+        </div>
+    </div>
+
+    <!-- Metric KPI Cards -->
+    <div class="kpi-grid mb-4">
+        <div class="kpi-card highlight-card">
+            <div class="kpi-header">
+                <span class="kpi-label">Decision Tree Test Accuracy</span>
+                <span class="kpi-icon">🎯</span>
+            </div>
+            <div class="kpi-value text-cyan">{{ ml_eval.test_accuracy }}%</div>
+            <div class="kpi-meta">Evaluated on {{ ml_eval.test_sample_count }} held-out test samples</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span class="kpi-label">Rule-Based Test Accuracy</span>
+                <span class="kpi-icon">📐</span>
+            </div>
+            <div class="kpi-value text-muted">{{ baseline_eval.accuracy }}%</div>
+            <div class="kpi-meta">Heuristic threshold baseline</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span class="kpi-label">Decision Tree Macro F1</span>
+                <span class="kpi-icon">⚖️</span>
+            </div>
+            <div class="kpi-value text-green">{{ ml_eval.f1_macro }}%</div>
+            <div class="kpi-meta">Balanced across all 5 speed levels</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span class="kpi-label">Dataset Partition</span>
+                <span class="kpi-icon">📊</span>
+            </div>
+            <div class="kpi-value">{{ ml_eval.train_sample_count }} / {{ ml_eval.test_sample_count }}</div>
+            <div class="kpi-meta">80% Train Split / 20% Test Split</div>
+        </div>
+    </div>
+
+    <!-- Comparative Table -->
+    <div class="card panel-card mb-4">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">1. Overall Model Comparison</h2>
+                <p class="card-subtitle">Direct side-by-side metric comparison on the exact same test split.</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="benchmark-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Decision Tree (scikit-learn)</th>
+                        <th>Rule-Based Baseline</th>
+                        <th>Absolute Difference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Accuracy</strong></td>
+                        <td><span class="metric-pill pill-cyan">{{ ml_eval.test_accuracy }}%</span></td>
+                        <td><span class="metric-pill pill-neutral">{{ baseline_eval.accuracy }}%</span></td>
+                        <td><strong>{{ (ml_eval.test_accuracy - baseline_eval.accuracy) | round(2) }}%</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Macro Precision</strong></td>
+                        <td><span class="metric-pill pill-cyan">{{ ml_eval.precision_macro }}%</span></td>
+                        <td><span class="metric-pill pill-neutral">{{ baseline_eval.precision_macro }}%</span></td>
+                        <td><strong>{{ (ml_eval.precision_macro - baseline_eval.precision_macro) | round(2) }}%</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Macro Recall</strong></td>
+                        <td><span class="metric-pill pill-cyan">{{ ml_eval.recall_macro }}%</span></td>
+                        <td><span class="metric-pill pill-neutral">{{ baseline_eval.recall_macro }}%</span></td>
+                        <td><strong>{{ (ml_eval.recall_macro - baseline_eval.recall_macro) | round(2) }}%</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Macro F1-Score</strong></td>
+                        <td><span class="metric-pill pill-cyan">{{ ml_eval.f1_macro }}%</span></td>
+                        <td><span class="metric-pill pill-neutral">{{ baseline_eval.f1_macro }}%</span></td>
+                        <td><strong>{{ (ml_eval.f1_macro - baseline_eval.f1_macro) | round(2) }}%</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Confusion Matrix Breakdown (Feature 7) -->
+    <div class="card panel-card mb-4">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">2. Decision Tree Confusion Matrix</h2>
+                <p class="card-subtitle">Distribution of actual ground truth test labels vs. model predicted fan speeds.</p>
+            </div>
+            <span class="chip chip-outline">Labels: Levels 1 – 5</span>
+        </div>
+
+        <div class="matrix-wrapper">
+            <table class="confusion-table" id="confusion-matrix-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="matrix-corner">True \ Predicted</th>
+                        <th colspan="5" class="text-center matrix-pred-header">Predicted Fan Speed Level</th>
+                    </tr>
+                    <tr>
+                        <th>Level 1</th>
+                        <th>Level 2</th>
+                        <th>Level 3</th>
+                        <th>Level 4</th>
+                        <th>Level 5</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row_idx in range(5) %}
+                        <tr>
+                            <th class="matrix-true-header">True Level {{ row_idx + 1 }}</th>
+                            {% for col_idx in range(5) %}
+                                {% set cell_val = ml_eval.confusion_matrix[row_idx][col_idx] %}
+                                <td class="matrix-cell {% if row_idx == col_idx %}diagonal-cell{% elif cell_val > 0 %}off-diagonal-cell{% endif %}">
+                                    {{ cell_val }}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="matrix-legend text-muted mt-2">
+            💡 Green diagonal cells indicate correct test classifications. 
+            Off-diagonal numbers represent test instances where human stochastic noise (±1 speed) caused boundary transitions.
+        </p>
+    </div>
+
+    <!-- Per-Class Metrics Table -->
+    <div class="card panel-card mb-4">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">3. Per-Speed Level Performance Breakdown</h2>
+                <p class="card-subtitle">Granular precision, recall, and F1-score for each discrete fan speed level.</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Fan Speed Level</th>
+                        <th>Airflow Classification</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1-Score</th>
+                        <th>Test Support</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lvl in range(1, 6) %}
+                        {% set key = "Level " ~ lvl %}
+                        {% set pdata = ml_eval.per_class.get(key, {}) %}
+                        <tr>
+                            <td><strong>Level {{ lvl }}</strong></td>
+                            <td>{{ fan_levels[lvl].name }}</td>
+                            <td>{{ pdata.precision }}%</td>
+                            <td>{{ pdata.recall }}%</td>
+                            <td><strong>{{ pdata.f1_score }}%</strong></td>
+                            <td>{{ pdata.support }} samples</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Synthetic Dataset Assumptions & Limitations (Feature 3 & 8) -->
+    <div class="card panel-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">4. Synthetic Dataset Assumptions & Scientific Limitations</h2>
+                <p class="card-subtitle">Transparent documentation of how the synthetic data was constructed.</p>
+            </div>
+            <span class="chip chip-warning">Important Notice</span>
+        </div>
+
+        <div class="assumptions-grid">
+            <div class="assumption-item">
+                <h4 class="text-cyan">1. Heat Index Formula Proxy</h4>
+                <p>
+                    A mathematical proxy discomfort score <code>S = Temp + 0.14 × (Humidity - 40) + Time_Offset</code> 
+                    was used to simulate the relationship between wet-bulb convective evaporation and ambient warmth.
+                </p>
+            </div>
+
+            <div class="assumption-item">
+                <h4 class="text-cyan">2. Circadian Time Offsets</h4>
+                <p>
+                    Metabolic and acoustic factors were approximated: Night (-2.0 comfort offset for quiet sleep), 
+                    Morning (0.0 neutral baseline), Afternoon (+1.5 peak heat and activity), and Evening (+0.5 residual warmth).
+                </p>
+            </div>
+
+            <div class="assumption-item">
+                <h4 class="text-cyan">3. Simulated Human Stochasticity</h4>
+                <p>
+                    A 10% stochastic perturbation (±1 level) was injected into the synthetic labels to reflect empirical human 
+                    comfort variance as documented in ASHRAE 55 thermal comfort standards.
+                </p>
+            </div>
+
+            <div class="assumption-item">
+                <h4 class="text-cyan">4. Scientific Limitations</h4>
+                <p>
+                    <strong>Synthetic data does not prove real-world human comfort.</strong> Real biological perception depends on clothing insulation (clo), 
+                    metabolic rate (met), radiant temperatures, and air velocity. This software prototype proves algorithmic learning feasibility only.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
